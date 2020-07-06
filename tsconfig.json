@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": true,
+		"module": "CommonJS",
+		"outDir": "./build",
+		"target": "ES2020",
+		"noImplicitAny": true,
+		"noImplicitThis": true,
+		"strict": true
+	}
+}

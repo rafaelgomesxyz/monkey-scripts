@@ -1,0 +1,49 @@
+{
+	"name": "monkey-scripts",
+	"version": "1.0.0",
+	"description": "A collection of all my monkey scripts.",
+	"author": "rafaelgssa",
+	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "git://gitlab.com/rafaelgssa/monkey-scripts.git"
+	},
+	"scripts": {
+		"prettier": "prettier '**/*.js'",
+		"format-check": "npm run prettier -- --check",
+		"format": "npm run prettier -- --write",
+		"prettier-other": "prettier '**/*.{json,html,md,yml,yaml}'",
+		"format-check-other": "npm run prettier-other -- --check",
+		"format-other": "npm run prettier-other -- --write",
+		"eslint": "eslint '**/*.js'",
+		"lint-check": "npm run eslint -- --quiet",
+		"lint-all": "npm run eslint -- --fix",
+		"lint": "npm run lint-all -- --quiet",
+		"check": "run-s format-check-other lint-check",
+		"fix": "run-s format-other lint"
+	},
+	"devDependencies": {
+		"@types/greasemonkey": "^4.0.0",
+		"@types/jquery": "^3.5.0",
+		"@types/bootstrap": "^4.5.0",
+		"@types/node": "^14.0.14",
+		"@types/uuid": "^8.0.0",
+		"eslint": "^7.4.0",
+		"eslint-config-prettier": "^6.11.0",
+		"eslint-plugin-prettier": "^3.1.4",
+		"husky": "^4.2.5",
+		"lint-staged": "^10.2.11",
+		"npm-run-all": "^4.1.5",
+		"prettier": "^2.0.5",
+		"typescript": "^3.9.6"
+	},
+	"husky": {
+		"hooks": {
+			"pre-commit": "lint-staged"
+		}
+	},
+	"lint-staged": {
+		"*.{json,html,md,yml,yaml}": "prettier --write",
+		"*.js": "eslint --fix --quiet"
+	}
+}
