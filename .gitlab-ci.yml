@@ -1,0 +1,20 @@
+image: ruby:latest
+
+cache:
+  paths:
+    - vendor/
+
+pages:
+  stage: deploy
+  script:
+    - bundle config set path 'vendor/'
+    - bundle install
+    - bundle exec jekyll build -s pages/ -d public/
+  artifacts:
+    paths:
+      - public/
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
+      changes:
+        - pages/*
+      when: always

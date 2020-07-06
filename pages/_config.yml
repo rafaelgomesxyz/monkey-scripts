@@ -1,0 +1,12 @@
+title: Monkey Scripts
+description: A collection of all my Greasemonkey scripts.
+author: rafaelgssa
+email: rafael.gssa@pm.me
+baseurl: /monkey-scripts
+theme: minima
+header_pages:
+  -
+exclude:
+  - vendor/
+  - Gemfile
+  - Gemfile.lock
