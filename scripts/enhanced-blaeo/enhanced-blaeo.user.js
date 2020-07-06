@@ -1,18 +1,17 @@
 // ==UserScript==
 // @name Enhanced BLAEO
 // @namespace https://rafaelgssa.gitlab.io/monkey-scripts
-// @version 5.0.1
+// @version 5.0.2
 // @author rafaelgssa
 // @description Adds some cool features to BLAEO.
 // @match https://www.backlog-assassins.net/*
 // @match https://www.steamgifts.com/discussion/9VTBD/*
 // @require https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @require https://greasyfork.org/scripts/405813-monkey-utils/code/Monkey%20Utils.js?version=821710
-// @require https://greasyfork.org/scripts/405802-monkey-dom/code/Monkey%20DOM.js?version=821769
+// @require https://greasyfork.org/scripts/405802-monkey-dom/code/Monkey%20DOM.js?version=823982
 // @require https://greasyfork.org/scripts/405831-monkey-storage/code/Monkey%20Storage.js?version=821709
 // @require https://greasyfork.org/scripts/405822-monkey-requests/code/Monkey%20Requests.js?version=821708
 // @require https://greasyfork.org/scripts/406057-blaeo-api/code/BLAEO%20API.js?version=823678
-// @require https://code.jquery.com/jquery-3.5.1.min.js
 // @connect steamgifts.com
 // @connect steamcommunity.com
 // @run-at document-idle
@@ -31,7 +30,7 @@
 // @noframes
 // ==/UserScript==
 
-/* global BlaeoApi, DOM, PersistentStorage, Requests, Utils, $ */
+/* global BlaeoApi, DOM, PersistentStorage, Requests, Utils */
 
 /**
  * @typedef {'new' | GameProgress} GameCategory
@@ -49,6 +48,7 @@
  * @property {Partial<GlcGlobals>} glc
  * @property {Partial<PgGlobals>} pg
  * @property {HTMLElement | null} alertEl
+ * @property {HTMLButtonElement | null} dialogModalButton
  * @property {HTMLElement | null} dialogModalHolderEl
  * @property {HTMLElement | null} dialogModalEl
  * @property {HTMLElement | null} dialogModalLabelEl
@@ -83,6 +83,7 @@
  * @property {HTMLElement[]} listItemEls
  * @property {HTMLButtonElement | null} button
  * @property {HTMLElement | null} buttonIconEl
+ * @property {HTMLButtonElement | null} modalButton
  * @property {HTMLElement | null} modalEl
  * @property {HTMLElement | null} modalBodyEl
  * @property {boolean} hasChecked
@@ -467,7 +468,7 @@ class CustomError extends Error {
 							clear: both;
 						}
 
-						#eblaeo-alert, #eblaeo-pg-generator, #eblaeo-pg-full-preview, .eblaeo-pg-collapse, .eblaeo-pg-expand {
+						#eblaeo-alert, #eblaeo-dialog-modal-button, #eblaeo-glc-modal-button, #eblaeo-pg-generator, #eblaeo-pg-full-preview, .eblaeo-pg-collapse, .eblaeo-pg-expand {
 							display: none;
 						}
 
@@ -712,11 +713,17 @@ class CustomError extends Error {
 	 * @param {string} message The message to show.
 	 * @param {(event: MouseEvent) => unknown | null} [onYes] Callback to call when the 'yes' button is clicked.
 	 * @param {(event: MouseEvent) => unknown | null} [onNo] Callback to call when the 'no' button is clicked.
+	 * @returns {Promise<void>}
 	 */
-	const showDialog = (message, onYes, onNo) => {
+	const showDialog = async (message, onYes, onNo) => {
 		if (!eblaeo.dialogModalEl) {
 			// prettier-ignore
 			DOM.insertElements(document.body, 'beforeend', [
+				['button', {
+					id: 'eblaeo-dialog-modal-button',
+					dataset: { toggle: 'modal', target: '#eblaeo-dialog-modal' },
+					ref: (/** @type {HTMLButtonElement} */ ref) => (eblaeo.dialogModalButton = ref),
+				}, null],
 				['div', {
 					id: 'eblaeo-dialog-modal-holder',
 					ref: (/** @type {HTMLElement} */ ref) => (eblaeo.dialogModalHolderEl = ref),
@@ -764,6 +771,7 @@ class CustomError extends Error {
 			]);
 		}
 		if (
+			!eblaeo.dialogModalButton ||
 			!eblaeo.dialogModalEl ||
 			!eblaeo.dialogModalLabelEl ||
 			!eblaeo.dialogModalFooterEl ||
@@ -784,18 +792,23 @@ class CustomError extends Error {
 		} else {
 			eblaeo.dialogModalFooterEl.style.display = 'none';
 		}
-		$(eblaeo.dialogModalEl).on('shown.bs.modal', () => {
-			if (!eblaeo.dialogModalHolderEl || !eblaeo.dialogModalEl) {
-				return;
-			}
+		eblaeo.dialogModalButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		const isModalOpen = !!(await DOM.dynamicQuerySelector(
+			'#eblaeo-dialog-modal.modal.in',
+			60,
+			0.1
+		));
+		if (isModalOpen) {
 			eblaeo.dialogModalEl.style.zIndex = '1070';
-			const modalBackdropEl = /** @type {HTMLElement | null} */ (eblaeo.dialogModalHolderEl
-				.nextElementSibling);
+			const modalBackdropEl = /** @type {HTMLElement | null} */ (await DOM.dynamicQuerySelector(
+				'#eblaeo-dialog-modal-holder + .modal-backdrop.in',
+				60,
+				0.1
+			));
 			if (modalBackdropEl) {
 				modalBackdropEl.style.zIndex = '1060';
 			}
-		});
-		$(eblaeo.dialogModalEl).modal();
+		}
 	};
 
 	/**
@@ -1219,6 +1232,11 @@ class CustomError extends Error {
 					}, null	],
 				]],
 			]],
+			['button', {
+				id: 'eblaeo-glc-modal-button',
+				dataset: { toggle: 'modal', target: '#eblaeo-glc-modal' },
+				ref: (/** @type {HTMLButtonElement} */ ref) => (eblaeo.glc.modalButton = ref),
+			}, null],
 			['div', { id: 'eblaeo-glc-modal-holder' }, [
 				['div', {
 					id: 'eblaeo-glc-modal',
@@ -1350,6 +1368,7 @@ class CustomError extends Error {
 	 */
 	const glc_showResults = () => {
 		if (
+			!eblaeo.glc.modalButton ||
 			!eblaeo.glc.modalEl ||
 			!eblaeo.glc.modalBodyEl ||
 			!eblaeo.glc.games ||
@@ -1397,7 +1416,7 @@ class CustomError extends Error {
 				showAlert(eblaeo.glc.modalBodyEl, 'atinner', 'danger', 'failed to load list check results');
 			}
 		}
-		$(eblaeo.glc.modalEl).modal();
+		eblaeo.glc.modalButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 		const counterEl = document.querySelector('[id*="counter"]');
 		if (!counterEl) {
 			return;
@@ -1441,8 +1460,9 @@ class CustomError extends Error {
 				id: 'eblaeo-pg-generate-button',
 				type: 'button',
 				className: 'btn btn-default pull-right',
+				dataset: { toggle: 'modal', target: '#eblaeo-pg-modal' },
 				ref: (/** @type {HTMLElement} */ ref) => (eblaeo.pg.generateButton = ref),
-				onclick: pg_showModal,
+				onclick: pg_focusSearchGamesField,
 			}, 'Generate'],
 		]);
 		// prettier-ignore
@@ -2473,15 +2493,17 @@ class CustomError extends Error {
 	};
 
 	/**
-	 * Shows the generator modal.
+	 * Gives focus to the search games field when the modal is open.
+	 * @returns {Promise<void>}
 	 */
-	const pg_showModal = () => {
-		if (!eblaeo.pg.modalEl || !eblaeo.pg.searchGamesField) {
+	const pg_focusSearchGamesField = async () => {
+		if (!eblaeo.pg.searchGamesField) {
 			return;
 		}
-		// @ts-expect-error
-		$(eblaeo.pg.modalEl).on('shown.bs.modal', () => eblaeo.pg.searchGamesField.focus());
-		$(eblaeo.pg.modalEl).modal();
+		const isModalOpen = !!(await DOM.dynamicQuerySelector('#eblaeo-pg-modal.modal.in', 60, 0.1));
+		if (isModalOpen) {
+			eblaeo.pg.searchGamesField.focus();
+		}
 	};
 
 	/**
