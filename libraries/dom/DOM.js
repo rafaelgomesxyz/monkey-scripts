@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name DOM
 // @namespace https://rafaelgssa.gitlab.io/monkey-scripts
-// @version 4.1.5
+// @version 4.1.6
 // @author rafaelgssa
 // @description Useful library for dealing with the DOM.
 // @match *://*/*
@@ -81,24 +81,33 @@ const DOM = (() => {
 	/**
 	 * Waits for an element that is dynamically added to the DOM.
 	 * @param {string} selectors The selectors to query for the element.
-	 * @param {number} timeout How long to wait for the element in seconds. Defaults to 60 (1 minute).
+	 * @param {number} [timeout] How long to wait for the element in seconds. Defaults to 60 (1 minute).
+	 * @param {number} [frequency] How often to keep checking for the element in seconds. Defaults to 1.
 	 * @returns {Promise<Element | undefined>} The element, if found.
 	 */
-	const dynamicQuerySelector = (selectors, timeout = 60) => {
-		return new Promise((resolve) => _checkElementExists(selectors, resolve, timeout));
+	const dynamicQuerySelector = (selectors, timeout = 60, frequency = 1) => {
+		return new Promise((resolve) => _checkElementExists(selectors, resolve, timeout, frequency));
 	};
 
 	/**
 	 * @param {string} selectors
 	 * @param {ElementCallback} callback
-	 * @param {number} timeout
+	 * @param {number} [timeout]
+	 * @param {number} [frequency]
 	 */
-	const _checkElementExists = (selectors, callback, timeout = 60) => {
+	const _checkElementExists = (selectors, callback, timeout = 60, frequency = 1) => {
 		const element = document.querySelector(selectors);
 		if (element) {
 			callback(element);
 		} else if (timeout > 0) {
-			window.setTimeout(_checkElementExists, 1000, selectors, callback, timeout - 1);
+			window.setTimeout(
+				_checkElementExists,
+				frequency * 1000,
+				selectors,
+				callback,
+				timeout - frequency,
+				frequency
+			);
 		} else {
 			callback();
 		}
