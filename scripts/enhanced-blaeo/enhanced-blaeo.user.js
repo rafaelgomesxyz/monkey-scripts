@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Enhanced BLAEO
 // @namespace https://rafaelgssa.gitlab.io/monkey-scripts
-// @version 5.0.0
+// @version 5.0.1
 // @author rafaelgssa
 // @description Adds some cool features to BLAEO.
 // @match https://www.backlog-assassins.net/*
@@ -12,6 +12,7 @@
 // @require https://greasyfork.org/scripts/405831-monkey-storage/code/Monkey%20Storage.js?version=821709
 // @require https://greasyfork.org/scripts/405822-monkey-requests/code/Monkey%20Requests.js?version=821708
 // @require https://greasyfork.org/scripts/406057-blaeo-api/code/BLAEO%20API.js?version=823678
+// @require https://code.jquery.com/jquery-3.5.1.min.js
 // @connect steamgifts.com
 // @connect steamcommunity.com
 // @run-at document-idle
