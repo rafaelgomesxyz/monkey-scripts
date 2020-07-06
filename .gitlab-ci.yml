@@ -1,20 +1,25 @@
-image: ruby:latest
-
-cache:
-  paths:
-    - vendor/
+test:
+  image: node:alpine
+  script:
+    - curl -L https://unpkg.com/@pnpm/self-installer | node
+    - pnpm install
+    - pnpm run check
+  stage: test
 
 pages:
-  stage: deploy
+  image: ruby:alpine
   script:
     - bundle config set path 'vendor/'
     - bundle install
     - bundle exec jekyll build -s pages/ -d public/
+  stage: deploy
+  rules:
+    - changes:
+        - pages/*
+      when: always
+  cache:
+    paths:
+      - vendor/
   artifacts:
     paths:
       - public/
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "main"'
-      changes:
-        - pages/*
-      when: always
