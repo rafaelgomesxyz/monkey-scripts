@@ -15,7 +15,8 @@ pages:
     - bundle exec jekyll build -s pages/ -d public/
   stage: deploy
   rules:
-    - changes:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
         - pages/*
       when: always
   cache:
